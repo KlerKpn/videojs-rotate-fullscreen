@@ -1,7 +1,7 @@
 {
   "name": "videojs-rotate-fullscreen",
   "author": "klerkpn",
-  "version": "0.0.10",
+  "version": "0.0.11",
   "license": "MIT",
   "description": "",
   "main": "dist/videojs-rotate-fullscreen.es.js",
