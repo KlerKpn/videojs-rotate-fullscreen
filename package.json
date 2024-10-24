@@ -1,0 +1,48 @@
+{
+  "name": "videojs-rotate-fullscreen",
+  "author": "klerkpn",
+  "version": "0.0.1",
+  "license": "MIT",
+  "description": "",
+  "main": "dist/videojs-rotate-fullscreen.es.js",
+  "browser": "dist/videojs-rotate-fullscreen.js",
+  "min": "dist/videojs-rotate-fullscreen.min.js",
+  "repository": "",
+  "scripts": {
+    "clean": "rimraf dist && rimraf test",
+    "prebuild": "rimraf dist && mkdirp dist",
+    "build": "npm run clean && mkdirp dist && rollup -c rollup.config.js "
+  },
+  "exports": {
+    ".": {
+      "import": "./dist/videojs-rotate-fullscreen.es.js"
+    }
+  },
+  "keywords": [
+    "videojs",
+    "videojs-mobile",
+    "videojs-plugin",
+    "videojs-rotate",
+    "videojs-fullscreen",
+    "react"
+  ],
+  "peerDependencies": {
+    "video.js": "5.x || 6.x || 7.x || 8.x"
+  },
+  "dependencies": {
+    "global": "^4.4.0"
+  },
+  "devDependencies": {
+    "@rollup/plugin-json": "^6.1.0",
+    "acorn": "^8.4.1",
+    "mkdirp": "^1.0.4",
+    "rimraf": "^3.0.2",
+    "rollup": "^2.79.2",
+    "rollup-plugin-terser": "^7.0.2"
+  },
+  "files": [
+    "dist/videojs-fullscreen-rotate.js",
+    "dist/videojs-fullscreen-rotate.min.js",
+    "dist/videojs-fullscreen-rotate.es.js"
+  ]
+}
