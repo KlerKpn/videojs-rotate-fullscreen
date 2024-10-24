@@ -2,7 +2,6 @@ import videojs from 'video.js'
 import { version as VERSION } from '../package.json'
 import window from 'global/window'
 
-// Default options for the plugin.
 /**
  * @typedef {Object} RotateOptions
  * @property {boolean} enterOnRotate - Enter fullscreen mode on rotate.
@@ -10,37 +9,30 @@ import window from 'global/window'
  * @property {boolean} alwaysInLandscapeMode - Always in landscape mode.
  * @property {boolean} rotateWithPause - Enter fullscreen even when paused.
  * @property {boolean} windowMode - Use window mode instead of fullscreen.
- * @property {boolean} iOS - Enable functionality for iOS.
- */
-
-/**
- * @typedef {Object} PluginOptions
- * @property {RotateOptions} fullscreen - Options for fullscreen mode.
  */
 
 /** @type {RotateOptions} */
 const defaults = {
-  fullscreen: {
-    enterOnRotate: true,
-    exitOnRotate: true,
-    alwaysInLandscapeMode: true,
-    rotateWithPause: false,
-    windowMode: false,
-    iOS: true,
-  },
+  enterOnRotate: true,
+  exitOnRotate: true,
+  alwaysInLandscapeMode: true,
+  rotateWithPause: false,
+  windowMode: false,
 }
 
 const screen = window.screen
 
-/* eslint-disable no-console */
-screen.lockOrientationUniversal = (mode) =>
-  (screen.orientation &&
-    screen.orientation.lock(mode).then(
-      () => {},
-      (err) => console.log(err)
-    )) ||
-  (screen.mozLockOrientation && screen.mozLockOrientation(mode)) ||
-  (screen.msLockOrientation && screen.msLockOrientation(mode))
+screen.lockOrientationUniversal = (mode) => {
+  if (screen.orientation && screen.orientation.lock) {
+    return screen.orientation.lock(mode)
+  } else if (screen.mozLockOrientation) {
+    return screen.mozLockOrientation(mode)
+  } else if (screen.msLockOrientation) {
+    return screen.msLockOrientation(mode)
+  }
+  console.log('Orientation locking not supported')
+  return null
+}
 
 const angle = () => {
   // iOS
@@ -57,7 +49,6 @@ const angle = () => {
 
 // Cross-compatibility for Video.js 5 and 6.
 const registerPlugin = videojs.registerPlugin || videojs.plugin
-// const dom = videojs.dom || videojs;
 
 /**
  * Function to invoke when the player is ready.
@@ -74,14 +65,7 @@ const registerPlugin = videojs.registerPlugin || videojs.plugin
  *           A plain object containing options for the plugin.
  */
 const onPlayerReady = (player, options) => {
-  player.addClass('vjs-landscape-fullscreen')
-
-  if (
-    options.fullscreen.iOS &&
-    videojs.browser.IS_IOS &&
-    videojs.browser.IOS_VERSION > 9 &&
-    !player.el_.ownerDocument.querySelector('.bc-iframe')
-  ) {
+  if (videojs.browser.IS_IOS && videojs.browser.IOS_VERSION > 9) {
     player.tech_.el_.setAttribute('playsinline', 'playsinline')
     player.tech_.supportsFullScreen = function () {
       return false
@@ -90,27 +74,24 @@ const onPlayerReady = (player, options) => {
 
   const rotationHandler = () => {
     const currentAngle = angle()
-
+    const isFullScreen = player.isFullscreen() || player.isFullWindow
     if (currentAngle === 90 || currentAngle === 270 || currentAngle === -90) {
-      if (
-        options.fullscreen.enterOnRotate &&
-        (player.paused() === false || options.fullscreen.rotateWithPause)
-      ) {
-        if (options.fullscreen.windowMode) {
+      if (options.enterOnRotate && (player.paused() === false || options.rotateWithPause)) {
+        if (options.windowMode) {
           player.enterFullWindow()
         }
-        if (!options.fullscreen.windowMode) {
+        if (!options.windowMode) {
           player.requestFullscreen()
         }
         screen.lockOrientationUniversal('landscape')
       }
     }
     if (currentAngle === 0 || currentAngle === 180) {
-      if (options.fullscreen.exitOnRotate && player.isFullscreen()) {
-        if (options.fullscreen.windowMode) {
+      if (options.exitOnRotate && isFullScreen) {
+        if (options.windowMode) {
           player.exitFullWindow()
         }
-        if (!options.fullscreen.windowMode) {
+        if (!options.windowMode) {
           player.exitFullscreen()
         }
       }
@@ -126,7 +107,11 @@ const onPlayerReady = (player, options) => {
 
   player.on('fullscreenchange', (e) => {
     if (videojs.browser.IS_ANDROID || videojs.browser.IS_IOS) {
-      if (!angle() && player.isFullscreen() && options.fullscreen.alwaysInLandscapeMode) {
+      if (
+        !angle() &&
+        (player.isFullscreen() || player.isFullWindow) &&
+        options.alwaysInLandscapeMode
+      ) {
         screen.lockOrientationUniversal('landscape')
       }
     }
@@ -138,18 +123,13 @@ const onPlayerReady = (player, options) => {
 }
 
 /**
- * A video.js plugin.
- *
- * In the plugin function, the value of `this` is a video.js `Player`
- * instance. You cannot rely on the player being in a "ready" state here,
- * depending on how the plugin is invoked. This may or may not be important
- * to you; if not, remove the wait for "ready"!
+ * A video.js plugin to handle fullscreen rotation based on device orientation.
  *
  * @function rotateFullScreen
- * @param    {Object} [options={}]
- *           An object of options left to the plugin author to define.
+ * @param {RotateOptions} [options={}]
+ * Options to customize rotation and fullscreen behavior.
  */
-const rotateFullScreen = function (options) {
+const rotateFullScreen = function (/** @type {RotateOptions} */ options = {}) {
   if (videojs.browser.IS_ANDROID || videojs.browser.IS_IOS) {
     this.ready(() => {
       onPlayerReady(this, videojs.mergeOptions(defaults, options))
@@ -157,9 +137,8 @@ const rotateFullScreen = function (options) {
   }
 }
 
-// Register the plugin with video.js.
 registerPlugin('rotateFullScreen', rotateFullScreen)
 
 rotateFullScreen.VERSION = VERSION
 
-export default rotateFullScreen
+export { rotateFullScreen as default }
