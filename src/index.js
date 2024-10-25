@@ -2,8 +2,22 @@ import videojs from 'video.js'
 import { version as VERSION } from '../package.json'
 import window from 'global/window'
 
+function isInViewport() {
+  const rect = document?.querySelector('.vjs-tech')?.getBoundingClientRect()
+  const html = document.documentElement
+
+  return (
+    rect.top >= 0 &&
+    rect.left >= 0 &&
+    rect.bottom <= (window.innerHeight || html.clientHeight) &&
+    rect.right <= (window.innerWidth || html.clientWidth)
+  )
+}
+
 /**
  * @typedef {Object} RotateOptions
+ * @property {boolean} disabled - Manual disable rotation
+ * @property {boolean} onlyInView - Rotate only when the video fits in the viewport
  * @property {boolean} enterOnRotate - Enter fullscreen mode on rotate.
  * @property {boolean} exitOnRotate - Exit fullscreen mode on rotate.
  * @property {boolean} alwaysInLandscapeMode - Always in landscape mode.
@@ -13,9 +27,11 @@ import window from 'global/window'
 
 /** @type {RotateOptions} */
 const defaults = {
+  disabled: false,
   enterOnRotate: true,
   exitOnRotate: true,
   alwaysInLandscapeMode: true,
+  onlyInView: true,
   rotateWithPause: false,
   windowMode: false,
 }
@@ -65,6 +81,10 @@ const registerPlugin = videojs.registerPlugin || videojs.plugin
  *           A plain object containing options for the plugin.
  */
 const onPlayerReady = (player, options) => {
+  if (options.disabled) {
+    return
+  }
+
   if (videojs.browser.IS_IOS && videojs.browser.IOS_VERSION > 9) {
     player.tech_.el_.setAttribute('playsinline', 'playsinline')
     player.tech_.supportsFullScreen = function () {
@@ -73,6 +93,11 @@ const onPlayerReady = (player, options) => {
   }
 
   const rotationHandler = () => {
+    if (options.onlyInView) {
+      if (!isInViewport()) {
+        return
+      }
+    }
     const currentAngle = angle()
     const isFullScreen = player.isFullscreen() || player.isFullWindow
     if (currentAngle === 90 || currentAngle === 270 || currentAngle === -90) {
