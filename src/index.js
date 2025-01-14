@@ -38,7 +38,9 @@ const defaults = {
 
 const screen = window.screen
 
-screen.lockOrientationUniversal = (mode) => {
+const lockOrientationUniversal = (mode) => {
+  const screen = window.screen
+
   if (screen.orientation && screen.orientation.lock) {
     return screen.orientation.lock(mode)
   } else if (screen.mozLockOrientation) {
@@ -108,7 +110,7 @@ const onPlayerReady = (player, options) => {
         if (!options.windowMode) {
           player.requestFullscreen()
         }
-        screen.lockOrientationUniversal('landscape')
+        lockOrientationUniversal('landscape')
       }
     }
     if (currentAngle === 0 || currentAngle === 180) {
@@ -137,7 +139,7 @@ const onPlayerReady = (player, options) => {
         (player.isFullscreen() || player.isFullWindow) &&
         options.alwaysInLandscapeMode
       ) {
-        screen.lockOrientationUniversal('landscape')
+        lockOrientationUniversal('landscape')
       }
     }
   })
